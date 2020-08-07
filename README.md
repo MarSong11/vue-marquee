@@ -8,47 +8,52 @@
 
 ![Screenshot](https://github.com/MarSong11/vue-marquee/raw/master/screenshot/GIF.gif)
 
-## Build Setup
+## Install
 
 ```bash
-# install dependencies
-npm install
+npm install @marsong11/vue-marquee
 
-# serve with hot reload at localhost:8080
-npm run dev
-
+# or
+yarn add @marsong11/vue-marquee
 ```
 
 ## Usage
 
-```javascript
-import Marquee from './components/Marquee';
-export default {
-  data() {
-    return {
-      list: [
-        'data1 some text..',
-        'data2 balabalabalabala..',
-        'data3 long long long long long long long long long long long text'
-      ]
-    };
-  },
-  components: {
-    Marquee
-  }
-};
-```
-
 ```html
-<marquee :marqueeList="list" />
+<template>
+  <div class="container">
+    <marquee :data="list" />
+  </div>
+</template>
+
+<script>
+  import Marquee from '@marsong11/vue-marquee';
+
+  export default {
+    components: {
+      Marquee
+    },
+    ,
+    data() {
+      return {
+        list: [
+          'data1 some text.',
+          'data2 balabalabalabala.',
+          'data3 long long long long long long long long long long long text.',
+          'data4 hahaha.'
+        ]
+      };
+    }
+  };
+</script>
 ```
 
 ## Options
 
-| Name           | Type      | Default | Description                                                                |
-| -------------- | --------- | ------- | -------------------------------------------------------------------------- |
-| `marqueeList`  | `Array`   | `[]`    | content                                                                    |
-| `speed`    | `Number`  | `300`    | duration of transition between items (in ms) |
-| `delay`    | `Number`  | `2500`  | delay between transitions (in ms).              |
-| `scrollSpeed`  | `Number`  | `60`    | the speed of the scrolling (keep number low)                               |
-| `pauseOnHover` | `Boolean` | `false` | pause on hover                                                             |
+| Name           | Type      | Default | Description                                  |
+| -------------- | --------- | ------- | -------------------------------------------- |
+| `data`         | `Array`   | `[]`    | content                                      |
+| `duration`     | `Number`  | `300`   | duration of transition between items (in ms) |
+| `delay`        | `Number`  | `2500`  | delay between transitions (in ms).           |
+| `scrollSpeed`  | `Number`  | `60`    | the speed of the scrolling (keep number low) |
+| `pauseOnHover` | `Boolean` | `false` | pause on hover                               |

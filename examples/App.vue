@@ -2,26 +2,26 @@
   <div id="app">
     <img alt="Vue logo" src="./assets/logo.png" />
     <div class="container">
-      <marquee :marqueeList="list" pauseOnHover />
+      <vue-marquee :data="list" />
     </div>
   </div>
 </template>
 
 <script>
-import Marquee from "./components/Marquee.vue";
+import VueMarquee from '../packages/vue-marquee/index';
 
 export default {
-  name: "App",
+  name: 'App',
   components: {
-    Marquee
+    VueMarquee
   },
   data() {
     return {
       list: [
-        "data1 some text.",
-        "data2 balabalabalabala.",
-        "data3 long long long long long long long long long long long text.",
-        "data4 hahaha."
+        'data1 some text.',
+        'data2 balabalabalabala.',
+        'data3 long long long long long long long long long long long text.',
+        'data4 hahaha.'
       ]
     };
   }

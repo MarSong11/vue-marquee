@@ -4,14 +4,19 @@
     @mouseenter="onWrapperMouseEnter"
     @mouseleave="onWrapperMouseLeave"
   >
-    <ul ref="wrapper" class="wrapper" @transitionend="onWrapperTransitionEnd">
-      <template v-for="(item, index) in marqueeList">
+    <ul
+      ref="wrapper"
+      class="wrapper"
+      @transitionend.stop="onWrapperTransitionEnd"
+      :key="tmpKey"
+    >
+      <template v-for="(item, index) in data">
         <li
           ref="slide"
           class="slide"
           :key="index"
           v-html="item"
-          @transitionend="onSlideTransitionEnd"
+          @transitionend.stop="onSlideTransitionEnd"
         ></li>
       </template>
     </ul>
@@ -20,16 +25,17 @@
 
 <script>
 export default {
+  name: 'VueMarquee',
   props: {
     // 内容
-    marqueeList: {
+    data: {
       type: Array,
       default: function() {
         return [];
       }
     },
     // 切换时间(ms)
-    speed: {
+    duration: {
       type: Number,
       validator(val) {
         return /^\d+$/.test(val);
@@ -60,41 +66,55 @@ export default {
   },
   data() {
     return {
-      wrapper: undefined,
+      wrapper: null,
       slides: [],
-      mqLength: [],
-      timer: null,
+      olength: 0,
+      timer: 0,
       index: 1,
-      scrollLeftTransform: ""
+      scrollLeftTransform: '',
+
+      tmpKey: Date.now()
     };
   },
   watch: {
-    marqueeList(val) {
+    data(val) {
       if (val.length > 0) {
         this.init();
       }
     }
   },
   mounted() {
-    if (this.marqueeList.length > 0) {
+    if (this.data.length > 0) {
       this.init();
+    }
+  },
+  activated() {
+    if (this.data.length > 0) {
+      this.tmpKey = Date.now();
+
+      this.$nextTick(() => {
+        this.init();
+      });
     }
   },
   methods: {
     init() {
       this.wrapper = this.$refs.wrapper;
-      this.slides = this.wrapper.children;
-      this.mqLength = this.slides.length;
+      this.wrapper.style.transitionDuration = '0ms';
+      this.wrapper.style.transform = 'translateY(' + -this.index * 100 + '%)';
 
-      this.wrapper.style.transform = "translateY(" + -this.index * 100 + "%)";
-      this.wrapper.style.transition = "all " + this.speed + "ms";
+      this.slides = this.wrapper.children;
+      this.olength = this.slides.length;
 
       this.initSlide();
+
       this.autoplay();
     },
     initSlide() {
-      var first = this.slides[0].cloneNode(true);
-      var last = this.slides[this.slides.length - 1].cloneNode(true);
+      let first = this.slides[0].cloneNode(true);
+      first.addEventListener('transitionend', this.onSlideTransitionEnd);
+      let last = this.slides[this.slides.length - 1].cloneNode(true);
+      last.addEventListener('transitionend', this.onSlideTransitionEnd);
       this.wrapper.insertBefore(last, this.slides[0]);
       this.wrapper.appendChild(first);
     },
@@ -102,89 +122,99 @@ export default {
       clearInterval(this.timer);
 
       this.timer = setInterval(() => {
-        this.index++;
-        this.changeSlide();
+        this.loopFix();
+
+        setTimeout(() => {
+          let slide = this.slides[this.index];
+          if (slide && slide.scrollWidth > slide.clientWidth) {
+            clearInterval(this.timer);
+            this.timer = 0;
+
+            this.scrollLeft(slide);
+          } else {
+            this.slideNext();
+          }
+        }, 10);
       }, this.delay);
     },
-    changeSlide() {
-      this.wrapper.style.transform = "translateY(" + -this.index * 100 + "%)";
-      this.wrapper.style.transition = "all " + this.speed + "ms";
-
-      let slide = this.slides[this.index];
-      if (slide.scrollWidth > slide.clientWidth) {
-        clearInterval(this.timer);
-
-        this.scrollLeft(slide);
+    loopFix() {
+      if (this.index == this.slides.length - 1) {
+        this.index = 1;
+        this.wrapper.style.transitionDuration = '0ms';
+        this.wrapper.style.transform = 'translateY(' + -this.index * 100 + '%)';
       }
+    },
+    slideNext() {
+      this.index++;
+      this.wrapper.style.transitionDuration = this.duration + 'ms';
+      this.wrapper.style.transform = 'translateY(' + -this.index * 100 + '%)';
     },
     onWrapperTransitionEnd() {
-      if (this.index >= this.mqLength + 1) {
-        this.index = 1;
-      }
-
-      /* if (this.index <= 0) {
-        this.index = this.mqLength;
-      } */
-
-      this.wrapper.style.transform = "translateY(" + -this.index * 100 + "%)";
-      this.wrapper.style.transition = "";
+      this.wrapper.style.transitionDuration = '0ms';
+      this.wrapper.style.transform = 'translateY(' + -this.index * 100 + '%)';
     },
     scrollLeft() {
-      if (this.index == this.mqLength) {
-        let slide = this.slides[0];
-        slide.style.transform = "translate(-" + slide.scrollWidth + "px, 0px)";
-        slide.style.transition = "";
+      if (this.index == this.slides.length - 1) {
+        let slide = this.slides[1];
+        slide.style.transitionDuration = '0ms';
+        slide.style.transform = 'translateX(-' + slide.scrollWidth + 'px)';
       }
 
       setTimeout(() => {
         let slide = this.slides[this.index];
         let duration = slide.scrollWidth / this.scrollSpeed;
-        slide.style.transform = "translate(-" + slide.scrollWidth + "px, 0px)";
-        slide.style.transition = "all " + duration + "s linear";
+        slide.style.transition = 'all ' + duration + 's linear';
+        slide.style.transform = 'translateX(-' + slide.scrollWidth + 'px)';
       }, 500);
     },
     onSlideTransitionEnd() {
       let preIndex = this.index;
+      let preSlide = this.slides[preIndex];
 
-      if (this.index == this.mqLength) {
-        this.index = 0;
-        this.wrapper.style.transform = "translateY(" + -this.index * 100 + "%)";
-        this.wrapper.style.transition = "";
+      if (this.index == this.slides.length - 1) {
+        this.index = 1;
+        this.wrapper.style.transitionDuration = '0ms';
+        this.wrapper.style.transform = 'translateY(' + -this.index * 100 + '%)';
+
+        setTimeout(() => {
+          preSlide.style.transition = '';
+          preSlide.style.transform = 'translate(0, 0)';
+        }, 300);
+
+        setTimeout(() => {
+          this.slideNext();
+
+          this.autoplay();
+        }, 100);
+      } else {
+        setTimeout(() => {
+          preSlide.style.transition = '';
+          preSlide.style.transform = 'translate(0, 0)';
+        }, 300);
+
+        setTimeout(() => {
+          this.slideNext();
+
+          this.autoplay();
+        }, 100);
       }
-
-      setTimeout(() => {
-        this.index++;
-        this.changeSlide();
-
-        this.autoplay();
-      }, 300);
-
-      setTimeout(() => {
-        let slide = this.slides[preIndex];
-        slide.style.transform = "translate(0px, 0px)";
-        slide.style.transition = "";
-      }, 500);
     },
-    onWrapperMouseEnter() {
-      if (!this.pauseOnHover === true) return false;
-
+    pause() {
       let slide = this.slides[this.index];
       if (slide.scrollWidth > slide.clientWidth) {
         // 记录暂停时滚动的位置
         this.scrollLeftTransform = window.getComputedStyle(slide).transform;
+        slide.style.transition = 'all 0s linear';
         slide.style.transform = this.scrollLeftTransform;
-        slide.style.transition = "all 0s linear";
       }
 
       clearInterval(this.timer);
     },
-    onWrapperMouseLeave() {
-      if (!this.pauseOnHover === true) return false;
-
+    resume() {
       let slide = this.slides[this.index];
       if (slide.scrollWidth > slide.clientWidth) {
         let scrollLeftMatrix;
-        if (!!window.ActiveXObject || "ActiveXObject" in window) {
+        if (!!window.ActiveXObject || 'ActiveXObject' in window) {
           // IE
           scrollLeftMatrix = new window.MSCSSMatrix(this.scrollLeftTransform);
         } else {
@@ -196,11 +226,21 @@ export default {
         // 去掉已经滚动的长度，再计算时间
         let translateX = slide.scrollWidth + scrollLeftMatrix.m41;
         let duration = translateX / this.scrollSpeed;
-        slide.style.transform = "translate(-" + slide.scrollWidth + "px, 0px)";
-        slide.style.transition = "all " + duration + "s linear";
+        slide.style.transition = 'all ' + duration + 's linear';
+        slide.style.transform = 'translate(-' + slide.scrollWidth + 'px, 0px)';
       } else {
         this.autoplay();
       }
+    },
+    onWrapperMouseEnter() {
+      if (!this.pauseOnHover === true) return false;
+
+      this.pause();
+    },
+    onWrapperMouseLeave() {
+      if (!this.pauseOnHover === true) return false;
+
+      this.resume();
     }
   }
 };

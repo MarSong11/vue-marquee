@@ -1,11 +1,25 @@
 {
-  "name": "vue-marquee",
-  "version": "0.1.0",
-  "private": true,
+  "name": "@marsong11/vue-marquee",
+  "version": "0.1.2",
+  "description": "A Vue component to marquee",
+  "main": "lib/vue-marquee.umd.min.js",
+  "keywords": [
+    "vue",
+    "marquee",
+    "vue-marquee"
+  ],
+  "private": false,
+  "author": "marsong11",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marsong11/vue-marquee.git"
+  },
   "scripts": {
     "dev": "vue-cli-service serve",
     "build": "vue-cli-service build",
-    "lint": "vue-cli-service lint"
+    "lint": "vue-cli-service lint",
+    "build:lib": "vue-cli-service build --target lib --name vue-marquee --dest lib packages/vue-marquee/index.js"
   },
   "dependencies": {
     "core-js": "^3.6.5",
